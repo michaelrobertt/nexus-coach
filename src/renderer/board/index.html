@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self' data:" />
+  <title>Mini-Quadro Tático · Nexus Coach</title>
+  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet" href="./board.css" />
+</head>
+<body>
+  <div class="board-shell">
+    <header class="titlebar board-titlebar">
+      <div class="brand">
+        <span id="brandLogo"></span>
+        <b>NEXUS <span>COACH</span></b>
+      </div>
+      <div class="title-divider"></div>
+      <div class="board-title">
+        <span class="board-kicker">Mini-Quadro Tático</span>
+        <span class="board-sub">Summoner's Rift · <span id="patchLabel">—</span></span>
+      </div>
+      <div class="titlebar-spacer"></div>
+      <div class="board-badges">
+        <span class="badge gold" id="zoomBadge">100%</span>
+        <span class="badge" id="coordBadge">0, 0</span>
+        <span class="badge live" id="saveBadge"><span class="pulse"></span>Salvo</span>
+      </div>
+      <div class="win-controls">
+        <button id="minBtn" title="Minimizar"></button>
+        <button id="maxBtn" title="Maximizar"></button>
+        <button class="close" id="closeBtn" title="Fechar mini-quadro"></button>
+      </div>
+    </header>
+
+    <div class="cmdbar">
+      <div class="cmd-group">
+        <button class="icon-btn" id="undoBtn" title="Desfazer (Ctrl+Z)"></button>
+        <button class="icon-btn" id="redoBtn" title="Refazer (Ctrl+Shift+Z)"></button>
+        <button class="icon-btn" id="deleteBtn" title="Excluir seleção (Delete)"></button>
+        <button class="icon-btn danger" id="clearBtn" title="Limpar quadro"></button>
+      </div>
+      <div class="divider-v"></div>
+      <div class="cmd-colors" id="boardColors"></div>
+      <button class="color-add" id="customColorBtn" title="Escolher cor">+</button>
+      <div class="divider-v"></div>
+      <div class="cmd-range">
+        <span>Esp.</span><input type="range" id="widthRange" min="1" max="40" value="4" /><output id="widthOut">4</output>
+      </div>
+      <div class="cmd-range">
+        <span>Opac.</span><input type="range" id="opacityRange" min="10" max="100" value="100" /><output id="opacityOut">100%</output>
+      </div>
+      <div class="divider-v"></div>
+      <button class="cmd-btn" id="lineStyleBtn" title="Estilo do traço"></button>
+      <select class="select cmd-select" id="arrowStyleSelect" title="Estilo de seta"></select>
+      <button class="cmd-btn" id="fadeBtn" title="Tinta temporária"></button>
+      <select class="select cmd-select" id="fadeDuration" title="Duração da tinta temporária" style="width:58px;padding-right:18px">
+        <option value="2">2s</option><option value="3">3s</option><option value="4" selected>4s</option><option value="6">6s</option><option value="10">10s</option><option value="20">20s</option>
+      </select>
+      <div class="divider-v"></div>
+      <div class="team-toggle" id="teamToggle">
+        <button data-team="ally" class="active"><span class="dot"></span>Aliado</button>
+        <button data-team="enemy"><span class="dot"></span>Inimigo</button>
+      </div>
+      <div class="titlebar-spacer"></div>
+      <button class="cmd-btn" id="fitBtn" title="Enquadrar mapa"></button>
+      <button class="cmd-btn" id="saveBtn" title="Salvar cenário (Ctrl+S)"></button>
+      <button class="cmd-btn" id="loadBtn" title="Abrir cenário (Ctrl+O)"></button>
+      <button class="cmd-btn primary" id="exportBtn" title="Exportar imagem do quadro">Exportar</button>
+    </div>
+
+    <div class="board-main">
+      <aside class="tool-rail">
+        <div class="rail-label">Ferramentas</div>
+        <div class="rail-tools" id="railTools"></div>
+      </aside>
+
+      <main class="stage" id="stage">
+        <canvas id="boardCanvas"></canvas>
+        <div class="stage-toolbar">
+          <div class="stage-tool-pill" id="activeToolPill">Selecionar</div>
+          <div class="stage-tool-pill" id="selectionPill">Nenhum item selecionado</div>
+        </div>
+        <div class="stage-zoom">
+          <button class="icon-btn" id="zoomOut" title="Diminuir zoom">−</button>
+          <span id="zoomLabel">100%</span>
+          <button class="icon-btn" id="zoomIn" title="Aumentar zoom">+</button>
+          <button class="icon-btn" id="fitMap" title="Enquadrar mapa (0)"></button>
+        </div>
+        <div class="stage-hint" id="stageHint">Arraste com o botão do meio ou <kbd>Espaço</kbd> para mover · roda do mouse para zoom</div>
+        <div class="stage-loading" id="stageLoading"><span class="loader"></span>Carregando Summoner's Rift…</div>
+      </main>
+
+      <aside class="side-panel">
+        <div class="side-tabs" id="sideTabs"></div>
+        <div class="side-content scroll" id="sideContent"></div>
+        <div class="side-foot">
+          <span id="sideStatus">Mapa HD · 2600px</span>
+          <span class="side-foot-sep"></span>
+          <span id="itemCount">0 elementos</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="toast-layer" id="toastLayer"></div>
+  <script type="module" src="./board.js"></script>
+</body>
+</html>

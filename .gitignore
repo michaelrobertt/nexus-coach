@@ -1,0 +1,22 @@
+# Dependências
+node_modules/
+
+# Builds e instaladores (use GitHub Releases para os .exe)
+release/
+dist/
+out/
+
+# Artefatos locais
+test-artifacts/
+scripts/
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configurações locais
+.env
+.env.*
+*.local

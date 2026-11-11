@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self' data:" />
+  <title>Nexus Coach</title>
+  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet" href="./toolbar.css" />
+</head>
+<body>
+  <div class="toolbar-shell" id="shell">
+    <header class="tb-header drag">
+      <div class="tb-brand">
+        <span class="tb-logo" id="brandLogo"></span>
+        <div class="tb-wordmark">
+          <b>NEXUS <span>COACH</span></b>
+          <small>League of Legends · Overlay tático</small>
+        </div>
+      </div>
+      <button class="mode-status no-drag" id="modeStatus" title="Alternar modo desenho / interação">
+        <span class="mode-dot"></span>
+        <span id="modeStatusText">Interação</span>
+      </button>
+      <div class="tb-drag-hint"><span></span> arraste para mover</div>
+      <div class="tb-header-actions no-drag">
+        <button class="icon-btn" id="boardBtn" title="Mini-Quadro Tático (Ctrl+Shift+M)"></button>
+        <button class="icon-btn" id="settingsBtn" title="Configurações"></button>
+        <button class="icon-btn" id="hideBtn" title="Ocultar interface (Ctrl+Shift+H)"></button>
+      </div>
+    </header>
+
+    <section class="tb-card tb-main" id="mainCard">
+      <div class="tb-row tools-row">
+        <div class="tool-groups" id="toolGroups"></div>
+        <div class="tb-spacer"></div>
+        <div class="tb-actions">
+          <button class="icon-btn" id="undoBtn" title="Desfazer (Ctrl+Z)"></button>
+          <button class="icon-btn" id="redoBtn" title="Refazer (Ctrl+Shift+Z)"></button>
+          <button class="icon-btn danger" id="clearBtn" title="Limpar todas as marcações"></button>
+          <span class="divider-v"></span>
+          <button class="icon-btn" id="eyeBtn" title="Ocultar / mostrar marcações (F)"></button>
+          <button class="icon-btn" id="saveBtn" title="Salvar desenho (Ctrl+S)"></button>
+          <button class="icon-btn" id="loadBtn" title="Abrir desenho (Ctrl+O)"></button>
+          <button class="icon-btn" id="exportBtn" title="Exportar captura com marcações · Shift+clique: só marcações"></button>
+          <button class="mode-btn" id="drawToggle"></button>
+        </div>
+      </div>
+
+      <div class="tb-row style-row">
+        <div class="quick-palette-block">
+          <span class="tb-label">Cor</span>
+          <div class="quick-palette" id="quickColors"></div>
+          <button class="icon-btn tiny" id="colorsBtn" title="Paleta de cores"></button>
+        </div>
+        <div class="mini-control">
+          <span class="tb-label">Esp.</span>
+          <input type="range" id="widthRange" min="1" max="40" step="1" />
+          <output id="widthOut">4</output>
+        </div>
+        <div class="mini-control">
+          <span class="tb-label">Opac.</span>
+          <input type="range" id="opacityRange" min="5" max="100" step="1" />
+          <output id="opacityOut">100%</output>
+        </div>
+        <div class="divider-v"></div>
+        <div class="favorites-block" id="favoritesBlock">
+          <span class="tb-label">Favoritos</span>
+          <div class="favorite-tools" id="favoriteTools"></div>
+        </div>
+        <div class="tb-spacer"></div>
+        <button class="style-btn" id="strokeStyleBtn" title="Estilo do traço"></button>
+        <button class="style-btn" id="arrowStyleBtn" title="Estilos de setas táticas"></button>
+        <button class="style-btn" id="aoeBtn" title="Zonas de alcance e controle"><span class="style-ico"></span><span>Zonas</span></button>
+        <button class="style-btn" id="stampsBtn" title="Biblioteca de elementos"><span class="style-ico"></span><span>Elementos</span></button>
+        <button class="style-btn" id="presetsBtn" title="Presets de coaching"><span class="style-ico"></span><span>Presets</span></button>
+        <div class="fade-group">
+          <button class="icon-btn" id="fadeBtn" title="Tinta temporária (duração configurável)"></button>
+          <button class="fade-time" id="fadeTimeBtn" title="Duração da tinta temporária">4s</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="tb-panel hidden" id="panel">
+      <div class="tb-panel-head drag">
+        <div class="tb-panel-title" id="panelTitle">Biblioteca</div>
+        <div class="tb-panel-head-actions no-drag">
+          <span class="panel-hint" id="panelHint"></span>
+          <button class="icon-btn" id="panelClose" title="Fechar painel (Esc)"></button>
+        </div>
+      </div>
+      <div class="tb-panel-body scroll" id="panelBody"></div>
+    </section>
+  </div>
+
+  <div class="toast-layer" id="toastLayer"></div>
+  <script type="module" src="./toolbar.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+  cursor: default;
+}
+#draw {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+#textLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+#textLayer textarea {
+  pointer-events: auto;
+}
+body.no-cursor #draw {
+  cursor: none !important;
+}
+body.selecting-cursor #draw {
+  cursor: crosshair !important;
+}
+.nx-text-editor::placeholder {
+  color: rgba(233, 239, 247, 0.35);
+}

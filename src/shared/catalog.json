@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "palette": [
+    { "color": "#C8AA6E", "name": "Ouro Hextech" },
+    { "color": "#F0E6D2", "name": "Marfim" },
+    { "color": "#FF4D5E", "name": "Vermelho" },
+    { "color": "#FF8A3D", "name": "Laranja" },
+    { "color": "#FFD166", "name": "Amarelo" },
+    { "color": "#28E0A0", "name": "Verde" },
+    { "color": "#0AC8B9", "name": "Turquesa" },
+    { "color": "#3FC7FF", "name": "Azul" },
+    { "color": "#A78BFA", "name": "Violeta" },
+    { "color": "#FF6BD6", "name": "Rosa" },
+    { "color": "#9AA7B8", "name": "Cinza" },
+    { "color": "#10141C", "name": "Preto" }
+  ],
+  "arrowStyles": [
+    { "id": "attack", "name": "Ofensiva", "color": "#FF4D5E", "dash": [], "head": "solid", "glow": true, "desc": "Pressão, engage e avanço" },
+    { "id": "defense", "name": "Defensiva", "color": "#3FC7FF", "dash": [16, 11], "head": "solid", "glow": false, "desc": "Recuo e posicionamento seguro" },
+    { "id": "predict", "name": "Prevista", "color": "#FFD166", "dash": [4, 9], "head": "open", "glow": false, "desc": "Movimentação antecipada" },
+    { "id": "execute", "name": "Executada", "color": "#28E0A0", "dash": [], "head": "solid", "glow": true, "desc": "Rota já confirmada" },
+    { "id": "gank", "name": "Gank", "color": "#FF8A3D", "dash": [], "head": "double", "glow": true, "desc": "Aproximação para gank" },
+    { "id": "escape", "name": "Fuga", "color": "#A78BFA", "dash": [12, 8], "head": "open", "glow": false, "desc": "Rota de escape e flanco" },
+    { "id": "vision", "name": "Visão", "color": "#C8AA6E", "dash": [3, 7], "head": "dot", "glow": false, "desc": "Linha de visão e controle" }
+  ],
+  "aoePresets": [
+    { "id": "range", "name": "Alcance de habilidade", "kind": "circle", "size": 260, "color": "#C8AA6E", "fill": 0.10, "dash": [] },
+    { "id": "cone", "name": "Cone de habilidade", "kind": "cone", "size": 300, "angle": 68, "color": "#FFD166", "fill": 0.14, "dash": [] },
+    { "id": "aoe", "name": "Área de efeito", "kind": "circle", "size": 360, "color": "#FF4D5E", "fill": 0.14, "dash": [10, 7] },
+    { "id": "ward", "name": "Visão de sentinela", "kind": "circle", "size": 560, "color": "#3FC7FF", "fill": 0.06, "dash": [4, 10] },
+    { "id": "tower", "name": "Alcance de torre", "kind": "circle", "size": 430, "color": "#FFB03A", "fill": 0.08, "dash": [14, 8] },
+    { "id": "threat", "name": "Área de ameaça", "kind": "circle", "size": 330, "color": "#FF4D5E", "fill": 0.18, "dash": [5, 6] },
+    { "id": "objective", "name": "Controle de objetivo", "kind": "circle", "size": 520, "color": "#C8AA6E", "fill": 0.08, "dash": [18, 10] },
+    { "id": "engage", "name": "Zona de engage", "kind": "cone", "size": 380, "angle": 80, "color": "#FF8A3D", "fill": 0.16, "dash": [8, 6] },
+    { "id": "disengage", "name": "Zona de disengage", "kind": "cone", "size": 360, "angle": 80, "color": "#3FC7FF", "fill": 0.12, "dash": [10, 8] },
+    { "id": "teamfight", "name": "Influência em teamfight", "kind": "circle", "size": 300, "color": "#A78BFA", "fill": 0.16, "dash": [6, 8] }
+  ],
+  "wavePresets": [
+    { "id": "freeze", "name": "Congelar", "desc": "Segurar a onda perto da própria torre" },
+    { "id": "slowpush", "name": "Push lento", "desc": "Acumular vantagem de minions para pressionar" },
+    { "id": "fastpush", "name": "Push rápido", "desc": "Limpar a onda e bater na torre" }
+  ],
+  "coachPresets": [
+    {
+      "id": "gank-bot",
+      "name": "Gank na bot lane",
+      "desc": "Rota de aproximação + zona de ameaça",
+      "style": { "tool": "route", "color": "#FF8A3D", "width": 7, "opacity": 0.95, "arrowStyle": "gank", "fade": false }
+    },
+    {
+      "id": "jungle-path",
+      "name": "Rota de jungle",
+      "desc": "Caminho de clears com seta executada",
+      "style": { "tool": "route", "color": "#28E0A0", "width": 8, "opacity": 1, "arrowStyle": "execute", "fade": false }
+    },
+    {
+      "id": "escape",
+      "name": "Rota de fuga",
+      "desc": "Recuo seguro com seta tracejada",
+      "style": { "tool": "arrow", "color": "#A78BFA", "width": 6, "opacity": 0.9, "arrowStyle": "escape", "fade": false }
+    },
+    {
+      "id": "engage",
+      "name": "Engage / teamfight",
+      "desc": "Cone ofensivo + área de influência",
+      "style": { "tool": "aoe", "color": "#FF4D5E", "width": 4, "opacity": 0.95, "arrowStyle": "attack", "aoeId": "engage", "fade": false }
+    },
+    {
+      "id": "vision",
+      "name": "Controle de visão",
+      "desc": "Raio de sentinela e linha de visão",
+      "style": { "tool": "aoe", "color": "#3FC7FF", "width": 3, "opacity": 0.9, "arrowStyle": "vision", "aoeId": "ward", "fade": false }
+    },
+    {
+      "id": "trade",
+      "name": "Troca rápida (3s)",
+      "desc": "Tinta temporária para explicações dinâmicas",
+      "style": { "tool": "arrow", "color": "#FFD166", "width": 8, "opacity": 1, "arrowStyle": "predict", "fade": true, "fadeSeconds": 3 }
+    }
+  ],
+  "stamps": [
+    { "id": "baron", "name": "Barão Na'Shor", "cat": "objectives", "img": "lol-icons/baron.png" },
+    { "id": "dragon", "name": "Dragão", "cat": "objectives", "img": "lol-icons/dragon.png" },
+    { "id": "dragon-infernal", "name": "Dragão Infernal", "cat": "objectives", "img": "lol-icons/dragon_infernal.png" },
+    { "id": "dragon-ocean", "name": "Dragão Oceânico", "cat": "objectives", "img": "lol-icons/dragon_ocean.png" },
+    { "id": "dragon-cloud", "name": "Dragão das Nuvens", "cat": "objectives", "img": "lol-icons/dragon_cloud.png" },
+    { "id": "dragon-mountain", "name": "Dragão Montanhês", "cat": "objectives", "img": "lol-icons/dragon_mountain.png" },
+    { "id": "dragon-hextech", "name": "Dragão Hextech", "cat": "objectives", "img": "lol-icons/dragon_hextech.png" },
+    { "id": "dragon-chemtech", "name": "Dragão Quimtech", "cat": "objectives", "img": "lol-icons/dragon_chemtech.png" },
+    { "id": "dragon-elder", "name": "Dragão Ancião", "cat": "objectives", "img": "lol-icons/dragon_elder.png" },
+    { "id": "grub", "name": "Larva do Vazio", "cat": "objectives", "img": "lol-icons/grub.png" },
+    { "id": "herald", "name": "Arauto do Vale", "cat": "objectives", "img": "lol-icons/riftherald.png" },
+    { "id": "atakhan", "name": "Atakhan", "cat": "objectives", "img": "lol-icons/atakhan.png" },
+
+    { "id": "ward-green", "name": "Sentinela comum", "cat": "vision", "img": "lol-icons/minimap_ward_green_full.png" },
+    { "id": "ward-pink", "name": "Sentinela de controle", "cat": "vision", "img": "lol-icons/minimap_ward_pink_friendly.png" },
+    { "id": "ward-enemy", "name": "Sentinela inimiga", "cat": "vision", "img": "lol-icons/minimap_ward_green_enemy_new.png" },
+    { "id": "ward-pink-enemy", "name": "Controle inimiga", "cat": "vision", "img": "lol-icons/minimap_ward_pink_enemy.png" },
+    { "id": "vision-eye", "name": "Ponto de visão", "cat": "vision", "vector": "eye" },
+    { "id": "scuttle", "name": "Vastilarva", "cat": "vision", "vector": "scuttle" },
+    { "id": "plant", "name": "Planta de jungle", "cat": "vision", "img": "lol-icons/jungleplant.png" },
+
+    { "id": "tower", "name": "Torre", "cat": "structures", "img": "lol-icons/tower.png" },
+    { "id": "inhibitor", "name": "Inibidor", "cat": "structures", "img": "lol-icons/inhibitor.png" },
+    { "id": "nexus", "name": "Nexus", "cat": "structures", "img": "lol-icons/nexus.png" },
+
+    { "id": "blue-buff", "name": "Sentinela Azul", "cat": "jungle", "img": "lol-icons/blue.png" },
+    { "id": "red-buff", "name": "Sentinela Vermelha", "cat": "jungle", "img": "lol-icons/red.png" },
+    { "id": "camp", "name": "Acampamento", "cat": "jungle", "img": "lol-icons/jungle_camp_current.png" },
+    { "id": "camp-1", "name": "Acampamento 1", "cat": "jungle", "img": "lol-icons/jungle_camp_1_current.png" },
+    { "id": "camp-2", "name": "Acampamento 2", "cat": "jungle", "img": "lol-icons/jungle_camp_2_current.png" },
+    { "id": "camp-3", "name": "Acampamento 3", "cat": "jungle", "img": "lol-icons/jungle_camp_3_current.png" },
+    { "id": "gromp", "name": "Gromp", "cat": "jungle", "vector": "camp", "glyph": "G" },
+    { "id": "wolves", "name": "Lobos", "cat": "jungle", "vector": "camp", "glyph": "W" },
+    { "id": "raptors", "name": "Raptores", "cat": "jungle", "vector": "camp", "glyph": "R" },
+    { "id": "krugs", "name": "Krugs", "cat": "jungle", "vector": "camp", "glyph": "K" },
+
+    { "id": "ping-danger", "name": "Ping de perigo", "cat": "pings", "vector": "ping", "ping": "danger" },
+    { "id": "ping-missing", "name": "Inimigo desaparecido", "cat": "pings", "vector": "ping", "ping": "missing" },
+    { "id": "ping-assist", "name": "Preciso de ajuda", "cat": "pings", "vector": "ping", "ping": "assist" },
+    { "id": "ping-omw", "name": "Estou a caminho", "cat": "pings", "vector": "ping", "ping": "omw" },
+    { "id": "ping-vision", "name": "Precisa de visão", "cat": "pings", "vector": "ping", "ping": "vision" },
+    { "id": "ping-push", "name": "Empurrar onda", "cat": "pings", "vector": "ping", "ping": "push" },
+
+    { "id": "role-top", "name": "Top", "cat": "roles", "vector": "role", "role": "TOP" },
+    { "id": "role-jg", "name": "Jungle", "cat": "roles", "vector": "role", "role": "JG" },
+    { "id": "role-mid", "name": "Mid", "cat": "roles", "vector": "role", "role": "MID" },
+    { "id": "role-adc", "name": "Atirador", "cat": "roles", "vector": "role", "role": "ADC" },
+    { "id": "role-sup", "name": "Suporte", "cat": "roles", "vector": "role", "role": "SUP" },
+
+    { "id": "minion-blue", "name": "Minion azul", "cat": "minions", "vector": "minion", "team": "blue" },
+    { "id": "minion-red", "name": "Minion vermelho", "cat": "minions", "vector": "minion", "team": "red" },
+    { "id": "wave-blue", "name": "Onda azul", "cat": "minions", "vector": "wave", "team": "blue" },
+    { "id": "wave-red", "name": "Onda vermelha", "cat": "minions", "vector": "wave", "team": "red" }
+  ]
+}

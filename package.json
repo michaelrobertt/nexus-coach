@@ -1,0 +1,62 @@
+{
+  "name": "nexus-coach",
+  "productName": "Nexus Coach",
+  "version": "1.0.0",
+  "description": "Overlay de coaching tático para League of Legends",
+  "main": "main.js",
+  "author": "Nexus Coach",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "dist:win": "electron-builder --win nsis portable",
+    "dist:dir": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "45.3.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.nexuscoach.app",
+    "productName": "Nexus Coach",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*",
+      "LICENSE*",
+      "README.md"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "NexusCoach-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Nexus Coach"
+    },
+    "portable": {
+      "artifactName": "NexusCoach-Portable-${version}.${ext}"
+    }
+  }
+}

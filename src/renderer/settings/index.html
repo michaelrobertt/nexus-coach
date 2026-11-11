@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self' data:" />
+  <title>Configurações · Nexus Coach</title>
+  <link rel="stylesheet" href="../theme.css" />
+  <link rel="stylesheet" href="./settings.css" />
+</head>
+<body>
+  <div class="settings-shell">
+    <header class="titlebar settings-titlebar">
+      <div class="brand">
+        <span id="brandLogo"></span>
+        <b>NEXUS <span>COACH</span></b>
+      </div>
+      <div class="title-divider"></div>
+      <div class="settings-title">
+        <span class="settings-kicker">Configurações</span>
+        <span class="board-sub">Central de personalização · <span id="versionLabel">—</span></span>
+      </div>
+      <div class="titlebar-spacer"></div>
+      <div class="win-controls">
+        <button id="minBtn" title="Minimizar"></button>
+        <button id="maxBtn" title="Maximizar"></button>
+        <button class="close" id="closeBtn" title="Fechar"></button>
+      </div>
+    </header>
+
+    <div class="settings-body">
+      <aside class="settings-nav">
+        <div class="nav-label">Preferências</div>
+        <nav id="navList"></nav>
+        <div class="nav-spacer"></div>
+        <div class="nav-card">
+          <div class="nav-card-head"><span class="pulse-dot"></span>Overlay pronto</div>
+          <p>Use <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd> para alternar entre desenho e interação.</p>
+        </div>
+      </aside>
+
+      <main class="settings-content scroll" id="content"></main>
+    </div>
+
+    <footer class="settings-footer">
+      <div class="footer-status">
+        <span class="status-check" id="footerIcon"></span>
+        <span>As alterações são aplicadas e salvas automaticamente.</span>
+      </div>
+      <div class="titlebar-spacer"></div>
+      <button class="btn ghost" id="resetBtn">Restaurar padrões</button>
+      <button class="btn primary" id="doneBtn">Concluído</button>
+    </footer>
+  </div>
+  <div class="toast-layer" id="toastLayer"></div>
+  <script type="module" src="./settings.js"></script>
+</body>
+</html>
