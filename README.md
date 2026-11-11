@@ -1,5 +1,8 @@
 # Nexus Coach
 
+![Imagem central do Software](Pic1.png)
+![Imagem da parte de taticas do software](Pic2.png)
+
 Overlay de coaching tático para **League of Legends**, inspirado na praticidade do Epic Pen e com ferramentas específicas para análise de replay, aula e demonstração de estratégia.
 
 O programa é uma camada transparente sobre a tela, com barra flutuante, desenho sobre o jogo, Click-Through, tinta temporária, biblioteca de campeões/elementos e um **Mini-Quadro Tático** independente com Summoner's Rift em alta resolução.
