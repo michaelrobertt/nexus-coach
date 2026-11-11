@@ -488,3 +488,176 @@ body { --tb-radius: 12px; }
   .fade-time { display: none; }
   .tb-actions .icon-btn { width: 27px; }
 }
+
+/* ================================================================
+   Botão flutuante compacto
+   ================================================================ */
+.compact-orb {
+  display: none;
+  position: fixed;
+  left: 2px; top: 2px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(200, 170, 110, .48);
+  background:
+    radial-gradient(circle at 34% 26%, rgba(240, 220, 166, .18), transparent 46%),
+    radial-gradient(circle at 50% 120%, rgba(200, 170, 110, .12), transparent 60%),
+    linear-gradient(145deg, #172231, #070b11 70%);
+  color: var(--accent-bright);
+  cursor: grab;
+  align-items: center; justify-content: center;
+  padding: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03) inset, 0 0 20px rgba(200,170,110,.12);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  -webkit-app-region: no-drag;
+  touch-action: none;
+  z-index: 50;
+}
+body.compact { background: transparent !important; }
+body.compact .toolbar-shell,
+body.compact .toast-layer { display: none !important; }
+body.compact .compact-orb { display: inline-flex; }
+.compact-orb:hover {
+  transform: scale(1.045);
+  border-color: var(--accent);
+  box-shadow: 0 10px 28px rgba(0,0,0,.6), 0 0 26px rgba(200,170,110,.22);
+}
+.compact-orb.dragging { cursor: grabbing; transform: scale(.98); }
+.compact-orb .orb-icon { display: flex; filter: drop-shadow(0 0 6px rgba(200,170,110,.35)); pointer-events: none; }
+.compact-orb .orb-icon svg { width: 23px; height: 23px; }
+.compact-orb .orb-glow {
+  position: absolute; inset: 5px; border-radius: 50%;
+  border: 1px solid rgba(200,170,110,.14);
+  pointer-events: none;
+}
+.compact-orb .orb-dot {
+  position: absolute; right: 7px; top: 7px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--teal);
+  box-shadow: 0 0 8px var(--teal), 0 0 0 2px #0a0f16;
+  pointer-events: none;
+  animation: pulse 2.2s infinite;
+}
+.compact-orb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ================================================================
+   Tamanhos: pequeno / médio / grande
+   ================================================================ */
+body.size-small .toolbar-shell { padding: 4px; gap: 4px; }
+body.size-small .tb-header { height: 26px; gap: 7px; }
+body.size-small .tb-logo { width: 24px; height: 24px; }
+body.size-small .tb-logo svg { width: 23px; height: 23px; }
+body.size-small .tb-wordmark b { font-size: 14px; letter-spacing: 2.2px; }
+body.size-small .tb-wordmark small { display: none; }
+body.size-small .mode-status { height: 22px; font-size: 9px; padding: 0 8px; }
+body.size-small .tb-main { padding: 4px 6px; }
+body.size-small .tools-row { height: 34px; }
+body.size-small .style-row { height: 34px; padding-top: 2px; margin-top: 1px; gap: 6px; }
+body.size-small .tool-btn { min-width: 30px; height: 30px; }
+body.size-small .tool-btn svg { width: 17px; height: 17px; }
+body.size-small .tb-actions .icon-btn { width: 25px; height: 27px; }
+body.size-small .tb-actions .icon-btn svg { width: 14px; height: 14px; }
+body.size-small .mode-btn { height: 27px; margin-left: 5px; padding: 0 9px; font-size: 9px; }
+body.size-small .mini-control { width: 118px; }
+body.size-small .quick-palette .swatch { width: 16px; height: 16px; }
+body.size-small .favorites-block { display: none; }
+body.size-small .tb-header-actions .icon-btn { width: 27px; height: 27px; }
+body.size-small .tb-label { font-size: 7.5px; }
+body.size-small .style-btn { height: 25px; font-size: 9px; padding: 0 6px; }
+body.size-small .fade-group .icon-btn { height: 26px; width: 26px; }
+
+body.size-large .toolbar-shell { padding: 8px; gap: 7px; }
+body.size-large .tb-header { height: 36px; }
+body.size-large .tools-row { height: 46px; }
+body.size-large .style-row { height: 46px; }
+body.size-large .tool-btn { min-width: 38px; height: 38px; }
+body.size-large .tool-btn svg { width: 21px; height: 21px; }
+body.size-large .tb-main { padding: 8px 10px; }
+
+/* ================================================================
+   Layout vertical
+   ================================================================ */
+body.layout-vertical .toolbar-shell { padding: 6px; gap: 5px; }
+body.layout-vertical .tb-header {
+  height: auto; min-height: 32px; flex-wrap: wrap; gap: 5px 8px; padding: 0 1px 2px;
+}
+body.layout-vertical .tb-brand { flex: 1 1 100%; }
+body.layout-vertical .tb-wordmark small { display: none; }
+body.layout-vertical .tb-drag-hint { display: none; }
+body.layout-vertical .mode-status { order: 5; height: 23px; font-size: 9px; }
+body.layout-vertical .tb-header-actions { order: 6; margin-left: auto; }
+body.layout-vertical .tb-header-actions .icon-btn { width: 29px; height: 29px; }
+body.layout-vertical .tb-main { padding: 6px; flex: 1 1 auto; }
+body.layout-vertical .tools-row {
+  height: auto; flex-direction: column; align-items: stretch; gap: 5px;
+}
+body.layout-vertical .tool-groups {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px; width: 100%;
+}
+body.layout-vertical .tool-group { display: contents; }
+body.layout-vertical .tool-group + .tool-group { margin: 0; padding: 0; border: 0; }
+body.layout-vertical .tool-btn { width: 100%; min-width: 0; height: 34px; }
+body.layout-vertical .tb-actions {
+  width: 100%; flex-wrap: wrap; gap: 2px;
+  padding-top: 5px; border-top: 1px solid var(--line-soft);
+}
+body.layout-vertical .tb-actions .divider-v { display: none; }
+body.layout-vertical .tb-actions .icon-btn { width: 29px; height: 29px; }
+body.layout-vertical .mode-btn {
+  flex: 1 1 100%; margin: 3px 0 0; justify-content: center; height: 30px;
+}
+body.layout-vertical .style-row {
+  height: auto; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding-top: 6px; margin-top: 3px;
+}
+body.layout-vertical .quick-palette-block { width: 100%; }
+body.layout-vertical .favorites-block { display: none; }
+body.layout-vertical .tb-spacer { display: none; }
+body.layout-vertical .mini-control { flex: 1 1 44%; width: auto; }
+body.layout-vertical .style-btn { flex: 1 1 auto; justify-content: center; min-width: 58px; }
+body.layout-vertical .fade-group { margin-left: auto; }
+body.layout-vertical .tb-panel { flex: 1 1 auto; }
+body.layout-vertical .tb-panel-head { height: 40px; }
+body.layout-vertical .panel-hint { display: none; }
+body.layout-vertical .tb-panel-body { padding: 10px; }
+body.layout-vertical .library-grid { grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); }
+body.layout-vertical .stamp-tile.champ { height: 92px; }
+body.layout-vertical .stamp-tile.champ .champ-art { width: 46px; height: 46px; }
+body.layout-vertical .aoe-grid { grid-template-columns: 1fr; }
+body.layout-vertical .preset-list { grid-template-columns: 1fr; }
+body.layout-vertical .arrow-style-list { grid-template-columns: 1fr; }
+body.layout-vertical .shape-grid { grid-template-columns: repeat(3, 1fr); }
+body.layout-vertical .color-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
+
+/* ================================================================
+   Modo minimalista
+   ================================================================ */
+body.mode-minimal .tb-drag-hint,
+body.mode-minimal .tb-wordmark small,
+body.mode-minimal .favorites-block,
+body.mode-minimal .opacity-control,
+body.mode-minimal #strokeStyleBtn,
+body.mode-minimal #arrowStyleBtn,
+body.mode-minimal .fade-group,
+body.mode-minimal #presetsBtn,
+body.mode-minimal #saveBtn,
+body.mode-minimal #loadBtn,
+body.mode-minimal #exportBtn,
+body.mode-minimal [data-tool="pencil"],
+body.mode-minimal [data-tool="curve"],
+body.mode-minimal [data-tool="shapes"] { display: none !important; }
+
+body.mode-minimal .style-row { gap: 6px; }
+body.mode-minimal .quick-palette-block { margin-right: 2px; }
+body.mode-minimal .tb-main { padding-top: 5px; }
+
+/* Ajustes do layout vertical: mostrar rótulos e duração da tinta */
+body.layout-vertical .style-btn span,
+body.layout-vertical #arrowStyleBtn span { display: inline !important; }
+body.layout-vertical #arrowStyleBtn { min-width: 0; flex: 1 1 100%; justify-content: flex-start; }
+body.layout-vertical .fade-time { display: inline-flex !important; }
+body.layout-vertical .style-btn { flex: 0 1 auto; }
+
+@media (max-width: 980px) {
+  .mini-control { width: 124px; }
+}

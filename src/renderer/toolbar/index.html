@@ -25,6 +25,7 @@
       <div class="tb-header-actions no-drag">
         <button class="icon-btn" id="boardBtn" title="Mini-Quadro Tático (Ctrl+Shift+M)"></button>
         <button class="icon-btn" id="settingsBtn" title="Configurações"></button>
+        <button class="icon-btn" id="compactBtn" title="Minimizar em botão flutuante"></button>
         <button class="icon-btn" id="hideBtn" title="Ocultar interface (Ctrl+Shift+H)"></button>
       </div>
     </header>
@@ -57,7 +58,7 @@
           <input type="range" id="widthRange" min="1" max="40" step="1" />
           <output id="widthOut">4</output>
         </div>
-        <div class="mini-control">
+        <div class="mini-control opacity-control">
           <span class="tb-label">Opac.</span>
           <input type="range" id="opacityRange" min="5" max="100" step="1" />
           <output id="opacityOut">100%</output>
@@ -91,6 +92,12 @@
       <div class="tb-panel-body scroll" id="panelBody"></div>
     </section>
   </div>
+
+  <button class="compact-orb" id="compactOrb" type="button" title="Restaurar Nexus Coach" aria-label="Restaurar Nexus Coach">
+    <span class="orb-glow"></span>
+    <span class="orb-icon" id="orbIcon"></span>
+    <span class="orb-dot"></span>
+  </button>
 
   <div class="toast-layer" id="toastLayer"></div>
   <script type="module" src="./toolbar.js"></script>

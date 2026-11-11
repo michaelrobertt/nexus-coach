@@ -28,9 +28,15 @@ const DEFAULT_SETTINGS = {
   toolbar: {
     x: null,
     y: null,
-    width: 1180,
-    height: 172,
-    scale: 1
+    width: 1080,
+    height: 158,
+    scale: 1,
+    layout: 'horizontal',
+    size: 'medium',
+    compact: { x: null, y: null }
+  },
+  interface: {
+    displayMode: 'specialist'
   },
   drawing: {
     color: '#C8AA6E',
@@ -109,17 +115,26 @@ const DEFAULT_UI = {
   markingsVisible: true,
   uiVisible: true,
   boardOpen: false,
+  compact: false,
   canUndo: false,
   canRedo: false,
   selectedCount: 0
 };
 
-const DEFAULT_STORE = {
-  settings: DEFAULT_SETTINGS,
-  ui: DEFAULT_UI,
-  presets: { custom: [] },
-  scenes: { overlay: null, board: null }
+const TOOLBAR_PRESETS = {
+  horizontal: {
+    small: { width: 900, height: 150 },
+    medium: { width: 1080, height: 158 },
+    large: { width: 1240, height: 180 }
+  },
+  vertical: {
+    small: { width: 292, height: 470 },
+    medium: { width: 324, height: 480 },
+    large: { width: 360, height: 530 }
+  }
 };
+
+const COMPACT_SIZE = 56;
 
 let store = null;
 let storePath = '';
@@ -134,6 +149,10 @@ let shortcutsSuspended = false;
 let collapsedToolbarHeight = 172;
 let panelOpen = false;
 let shuttingDown = false;
+let compactMode = false;
+let compactTransition = 0;
+let preCompact = null;
+let needsToolbarPreset = false;
 
 /* ------------------------------------------------------------------ */
 /* Store                                                              */
@@ -174,10 +193,12 @@ function loadStore() {
     scenes: { overlay: loaded.scenes?.overlay || null, board: loaded.scenes?.board || null }
   };
   // UI de sessão: o modo de desenho inicial é uma preferência opcional.
+  needsToolbarPreset = !loaded.settings?.toolbar?.size;
   store.ui.drawMode = !!store.settings.overlay.startInDrawMode;
   store.ui.panel = null;
+  store.ui.compact = false;
   store.ui.uiVisible = true;
-  collapsedToolbarHeight = Number(store.settings.toolbar.height) || 172;
+  collapsedToolbarHeight = Number(store.settings.toolbar.height) || 158;
 }
 
 function saveStoreNow() {
@@ -242,7 +263,6 @@ function broadcastState() {
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) win.webContents.send('state:changed', state);
   }
-  refreshTray();
 }
 
 function getDisplays() {
@@ -356,18 +376,195 @@ function createOverlay() {
   overlay.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 }
 
+function toolbarMinSize(layout = store.settings.toolbar.layout) {
+  return layout === 'vertical' ? { width: 280, height: 360 } : { width: 900, height: 138 };
+}
+
+function toolbarPresetDims(layout = store.settings.toolbar.layout, size = store.settings.toolbar.size) {
+  const table = TOOLBAR_PRESETS[layout] || TOOLBAR_PRESETS.horizontal;
+  const dims = table[size] || table.medium;
+  const minimal = store.settings.interface?.displayMode === 'minimal';
+  const targetHeight = minimal ? (layout === 'vertical' ? 360 : 138) : dims.height;
+  const area = screen.getPrimaryDisplay().workArea;
+  return {
+    width: Math.min(dims.width, area.width - 16),
+    height: Math.min(targetHeight, area.height - 24)
+  };
+}
+
 function defaultToolbarBounds() {
   const area = screen.getPrimaryDisplay().workArea;
   const saved = store.settings.toolbar;
-  const width = Math.max(900, Math.min(Number(saved.width) || 1180, area.width - 24));
-  const height = Math.max(172, Math.min(Number(saved.height) || 172, area.height - 40));
+  const preset = toolbarPresetDims(saved.layout, saved.size);
+  const width = needsToolbarPreset
+    ? preset.width
+    : Math.max(280, Math.min(Number(saved.width) || preset.width, area.width - 24));
+  const height = needsToolbarPreset
+    ? preset.height
+    : Math.max(138, Math.min(Number(saved.height) || preset.height, area.height - 40));
   let x = Number.isFinite(saved.x) ? saved.x : Math.round(area.x + (area.width - width) / 2);
   let y = Number.isFinite(saved.y) ? saved.y : area.y + 18;
   return clampToDisplays({ x: Math.round(x), y: Math.round(y), width: Math.round(width), height: Math.round(height) });
 }
 
+function applyToolbarPreset() {
+  if (!toolbar || toolbar.isDestroyed() || compactMode) return;
+  const layout = store.settings.toolbar.layout || 'horizontal';
+  const size = store.settings.toolbar.size || 'medium';
+  const dims = toolbarPresetDims(layout, size);
+  if (panelOpen) {
+    setToolbarPanel(false, 0);
+    store.ui.panel = null;
+  }
+  if (toolbar.isMinimized()) toolbar.restore();
+  const b = toolbar.getBounds();
+  const display = screen.getDisplayMatching(b);
+  const area = display.workArea;
+  const width = Math.min(dims.width, area.width - 12);
+  const height = Math.min(dims.height, area.height - 12);
+  let x = Math.min(Math.max(b.x, area.x), area.x + area.width - width);
+  let y = Math.min(Math.max(b.y, area.y), area.y + area.height - height);
+  toolbar.setResizable(true);
+  const min = toolbarMinSize(layout);
+  toolbar.setMinimumSize(min.width, min.height);
+  toolbar.setBounds({ x: Math.round(x), y: Math.round(y), width: Math.round(width), height: Math.round(height) });
+  store.settings.toolbar.x = Math.round(x);
+  store.settings.toolbar.y = Math.round(y);
+  store.settings.toolbar.width = Math.round(width);
+  store.settings.toolbar.height = Math.round(height);
+  collapsedToolbarHeight = Math.round(height);
+  scheduleSave();
+  broadcastState();
+}
+
+function asCompactBounds(x, y) {
+  return clampToDisplays({
+    x: Math.round(x), y: Math.round(y), width: COMPACT_SIZE, height: COMPACT_SIZE
+  });
+}
+
+function compactButtonPosition(expandedBounds) {
+  const saved = store.settings.toolbar.compact;
+  if (Number.isFinite(saved?.x) && Number.isFinite(saved?.y)) {
+    return asCompactBounds(saved.x, saved.y);
+  }
+  return asCompactBounds(expandedBounds.x + expandedBounds.width - 96, expandedBounds.y + 2);
+}
+
+function animateWindowBounds(win, to, duration, isCancelled) {
+  return new Promise((resolve) => {
+    const from = win.getBounds();
+    const start = Date.now();
+    const tick = () => {
+      if (win.isDestroyed() || isCancelled?.()) { resolve(false); return; }
+      const t = Math.min(1, (Date.now() - start) / duration);
+      const e = 1 - Math.pow(1 - t, 3);
+      win.setBounds({
+        x: Math.round(from.x + (to.x - from.x) * e),
+        y: Math.round(from.y + (to.y - from.y) * e),
+        width: Math.max(COMPACT_SIZE, Math.round(from.width + (to.width - from.width) * e)),
+        height: Math.max(COMPACT_SIZE, Math.round(from.height + (to.height - from.height) * e))
+      });
+      if (t < 1) setTimeout(tick, 16);
+      else { win.setBounds(to); resolve(true); }
+    };
+    tick();
+  });
+}
+
+async function compactApp() {
+  if (compactMode || !toolbar || toolbar.isDestroyed()) return;
+  const token = ++compactTransition;
+  compactMode = true;
+  store.ui.uiVisible = true;
+  if (board && !board.isDestroyed()) board.close();
+  const currentBounds = toolbar.getBounds();
+  preCompact = {
+    bounds: {
+      x: currentBounds.x,
+      y: currentBounds.y,
+      width: currentBounds.width,
+      height: panelOpen ? collapsedToolbarHeight : currentBounds.height
+    },
+    drawMode: !!store.ui.drawMode,
+    settingsOpen: !!(settingsWin && !settingsWin.isDestroyed() && settingsWin.isVisible())
+  };
+  store.ui.panel = null;
+  panelOpen = false;
+  if (settingsWin && !settingsWin.isDestroyed()) settingsWin.hide();
+  if (store.ui.drawMode) {
+    store.ui.drawMode = false;
+  }
+  if (overlay && !overlay.isDestroyed()) overlay.hide();
+  const compactBounds = compactButtonPosition(preCompact.bounds);
+  toolbar.setResizable(false);
+  toolbar.setMinimumSize(COMPACT_SIZE, COMPACT_SIZE);
+  toolbar.showInactive();
+  toolbar.moveTop();
+  const completed = await animateWindowBounds(toolbar, compactBounds, 190, () => token !== compactTransition);
+  if (!completed || token !== compactTransition) return;
+  store.ui.compact = true;
+  store.settings.toolbar.compact = { x: compactBounds.x, y: compactBounds.y };
+  collapsedToolbarHeight = preCompact.bounds.height;
+  scheduleSave();
+  broadcastState();
+  refreshTray();
+}
+
+function restoreApp() {
+  if (!compactMode || !toolbar || toolbar.isDestroyed()) return;
+  ++compactTransition;
+  store.ui.uiVisible = true;
+  const fallback = defaultToolbarBounds();
+  const target = preCompact?.bounds || fallback;
+  const display = screen.getDisplayMatching({ x: target.x, y: target.y, width: target.width, height: target.height });
+  const area = display.workArea;
+  const width = Math.min(target.width, area.width - 12);
+  const height = Math.min(target.height, area.height - 12);
+  const x = Math.min(Math.max(target.x, area.x), area.x + area.width - width);
+  const y = Math.min(Math.max(target.y, area.y), area.y + area.height - height);
+  compactMode = false;
+  store.ui.compact = false;
+  const min = toolbarMinSize(store.settings.toolbar.layout);
+  toolbar.setMinimumSize(min.width, min.height);
+  toolbar.setResizable(true);
+  toolbar.setBounds({ x: Math.round(x), y: Math.round(y), width: Math.round(width), height: Math.round(height) });
+  store.settings.toolbar.x = Math.round(x);
+  store.settings.toolbar.y = Math.round(y);
+  store.settings.toolbar.width = Math.round(width);
+  store.settings.toolbar.height = Math.round(height);
+  collapsedToolbarHeight = Math.round(height);
+  if (store.ui.uiVisible) {
+    toolbar.showInactive();
+    if (preCompact?.settingsOpen && settingsWin && !settingsWin.isDestroyed()) {
+      settingsWin.show();
+      settingsWin.focus();
+    } else {
+      if (overlay && !overlay.isDestroyed()) overlay.showInactive();
+      if (preCompact?.drawMode) store.ui.drawMode = true;
+      syncClickThrough();
+    }
+  }
+  preCompact = null;
+  scheduleSave();
+  broadcastState();
+  refreshTray();
+}
+
+function moveCompactTo(x, y) {
+  if (!compactMode || !toolbar || toolbar.isDestroyed()) return;
+  const display = screen.getDisplayNearestPoint({ x: Math.round(x), y: Math.round(y) });
+  const area = display.workArea;
+  const nx = Math.min(Math.max(Math.round(x), area.x), area.x + area.width - COMPACT_SIZE);
+  const ny = Math.min(Math.max(Math.round(y), area.y), area.y + area.height - COMPACT_SIZE);
+  toolbar.setPosition(nx, ny);
+  store.settings.toolbar.compact = { x: nx, y: ny };
+  scheduleSave();
+}
+
 function createToolbar() {
   const b = defaultToolbarBounds();
+  needsToolbarPreset = false;
   collapsedToolbarHeight = b.height;
   toolbar = new BrowserWindow({
     ...b,
@@ -382,8 +579,8 @@ function createToolbar() {
     maximizable: false,
     fullscreenable: false,
     skipTaskbar: true,
-    minWidth: 900,
-    minHeight: 172,
+    minWidth: 280,
+    minHeight: 138,
     title: 'Nexus Coach',
     icon: path.join(ASSETS, 'icon.png'),
     webPreferences: {
@@ -396,13 +593,15 @@ function createToolbar() {
     }
   });
 
+  const initialMin = toolbarMinSize(store.settings.toolbar.layout);
+  toolbar.setMinimumSize(initialMin.width, initialMin.height);
   toolbar.setAlwaysOnTop(true, 'screen-saver');
   toolbar.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   toolbar.setSkipTaskbar(true);
   toolbar.loadFile(path.join(__dirname, 'src/renderer/toolbar/index.html'));
 
   const persist = () => {
-    if (!toolbar || toolbar.isDestroyed() || panelOpen) return;
+    if (!toolbar || toolbar.isDestroyed() || panelOpen || compactMode) return;
     const [x, y] = toolbar.getPosition();
     const [width, height] = toolbar.getSize();
     store.settings.toolbar.x = x;
@@ -431,11 +630,15 @@ function createToolbar() {
     if (overlay && !overlay.isDestroyed()) overlay.hide();
     broadcastState();
   });
-  toolbar.on('closed', () => { toolbar = null; });
+  toolbar.on('closed', () => {
+    compactTransition++;
+    toolbar = null;
+  });
   toolbar.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 }
 
 function createBoard() {
+  if (compactMode) restoreApp();
   if (board && !board.isDestroyed()) {
     board.show();
     board.focus();
@@ -447,6 +650,7 @@ function createBoard() {
   }
   if (overlay && !overlay.isDestroyed()) overlay.hide();
   if (toolbar && !toolbar.isDestroyed()) toolbar.hide();
+  refreshTray();
   const primary = screen.getPrimaryDisplay().workArea;
   const saved = store.settings.board.bounds;
   const width = Math.min(saved?.width || 1440, primary.width - 40);
@@ -484,6 +688,7 @@ function createBoard() {
     board.focus();
     store.ui.boardOpen = true;
     broadcastState();
+    refreshTray();
   });
 
   const persist = () => {
@@ -496,7 +701,7 @@ function createBoard() {
   board.on('closed', () => {
     board = null;
     store.ui.boardOpen = false;
-    if (store.ui.uiVisible && !(settingsWin && !settingsWin.isDestroyed())) {
+    if (store.ui.uiVisible && !compactMode && !(settingsWin && !settingsWin.isDestroyed())) {
       if (overlay && !overlay.isDestroyed()) overlay.showInactive();
       if (toolbar && !toolbar.isDestroyed()) toolbar.showInactive();
       syncClickThrough();
@@ -507,6 +712,7 @@ function createBoard() {
 }
 
 function createSettings() {
+  if (compactMode) restoreApp();
   if (settingsWin && !settingsWin.isDestroyed()) {
     settingsWin.show();
     settingsWin.focus();
@@ -518,6 +724,7 @@ function createSettings() {
     broadcastState();
   }
   if (overlay && !overlay.isDestroyed()) overlay.hide();
+  refreshTray();
   const primary = screen.getPrimaryDisplay().workArea;
   const saved = store.settings.settingsBounds;
   const width = Math.min(saved?.width || 1060, primary.width - 60);
@@ -581,6 +788,10 @@ function refreshTray() {
       click: () => toggleUI()
     },
     {
+      label: compactMode ? 'Restaurar aplicativo' : 'Minimizar em botão flutuante',
+      click: () => compactMode ? restoreApp() : compactApp()
+    },
+    {
       label: startDrawingLabel(),
       accelerator: shortcutLabel(store.settings.shortcuts.drawMode),
       click: () => setDrawMode(!store.ui.drawMode)
@@ -594,7 +805,7 @@ function refreshTray() {
     { label: 'Sair do Nexus Coach', click: () => { shuttingDown = true; app.quit(); } }
   ]);
   tray.setContextMenu(menu);
-  tray.setToolTip(`Nexus Coach · ${store.ui.drawMode ? 'Modo desenho' : 'Interação'}`);
+  tray.setToolTip(compactMode ? 'Nexus Coach · minimizado' : `Nexus Coach · ${store.ui.drawMode ? 'Modo desenho' : 'Interação'}`);
 }
 
 function startDrawingLabel() {
@@ -605,7 +816,7 @@ function createTray() {
   try {
     const img = nativeImage.createFromPath(path.join(ASSETS, 'tray.png'));
     tray = new Tray(img);
-    tray.on('click', () => toggleUI());
+    tray.on('click', () => compactMode ? restoreApp() : toggleUI());
     refreshTray();
   } catch (err) {
     console.error('Tray indisponível:', err);
@@ -618,6 +829,11 @@ function createTray() {
 
 function syncClickThrough() {
   if (!overlay || overlay.isDestroyed()) return;
+  if (compactMode) {
+    overlay.setIgnoreMouseEvents(true, { forward: true });
+    overlay.hide();
+    return;
+  }
   const draw = store.ui.drawMode && store.ui.uiVisible;
   overlay.setIgnoreMouseEvents(!draw, { forward: true });
   if (draw) {
@@ -628,6 +844,8 @@ function syncClickThrough() {
 }
 
 function setDrawMode(on, opts = {}) {
+  if (on && compactMode) restoreApp();
+  if (on && settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
   if (on && board && !board.isDestroyed()) board.close();
   store.ui.drawMode = !!on;
   if (on && !store.ui.uiVisible) {
@@ -638,12 +856,23 @@ function setDrawMode(on, opts = {}) {
   if (!on && overlay && !overlay.isDestroyed()) overlay.blur();
   syncClickThrough();
   broadcastState();
+  refreshTray();
   if (toolbar && !toolbar.isDestroyed()) toolbar.moveTop();
   if (!opts.silent) notify(on ? 'Modo desenho ativado' : 'Interação com o sistema ativada', on ? 'draw' : 'interact');
 }
 
 function toggleUI() {
   store.ui.uiVisible = !store.ui.uiVisible;
+  if (compactMode) {
+    if (store.ui.uiVisible) {
+      if (toolbar) toolbar.showInactive();
+    } else if (toolbar) {
+      toolbar.hide();
+    }
+    broadcastState();
+    refreshTray();
+    return;
+  }
   if (store.ui.uiVisible) {
     if (overlay) overlay.showInactive();
     if (toolbar) toolbar.showInactive();
@@ -656,10 +885,12 @@ function toggleUI() {
     if (toolbar) toolbar.hide();
   }
   broadcastState();
+  refreshTray();
   notify(store.ui.uiVisible ? 'Interface restaurada' : 'Interface oculta · use o atalho para voltar', 'info');
 }
 
 function toggleBoard() {
+  if (compactMode) restoreApp();
   if (board && !board.isDestroyed()) {
     board.close();
   } else {
@@ -797,7 +1028,15 @@ function setupIpc() {
   });
 
   ipcMain.handle('toolbar:focus-overlay', () => {
+    if (compactMode) return;
     if (store.ui.drawMode && overlay && !overlay.isDestroyed()) overlay.focus();
+  });
+
+  ipcMain.handle('app:compact', () => { compactApp(); return true; });
+  ipcMain.handle('app:restore', () => { restoreApp(); return true; });
+  ipcMain.handle('compact:move', (_e, { x, y }) => {
+    moveCompactTo(Number(x), Number(y));
+    return true;
   });
 
   ipcMain.handle('toolbar:reset-position', () => {
@@ -947,7 +1186,11 @@ function setupIpc() {
     const preserved = {
       boardBounds: store.settings.board.bounds,
       settingsBounds: store.settings.settingsBounds,
-      toolbar: { ...store.settings.toolbar }
+      toolbar: {
+        x: store.settings.toolbar.x,
+        y: store.settings.toolbar.y,
+        compact: { ...(store.settings.toolbar.compact || { x: null, y: null }) }
+      }
     };
     store.settings = deepMerge(clone(DEFAULT_SETTINGS), preserved);
     store.ui = deepMerge(clone(DEFAULT_UI), {
@@ -959,16 +1202,21 @@ function setupIpc() {
       aoeId: store.settings.drawing.aoeId,
       fade: store.settings.drawing.fade,
       fadeSeconds: store.settings.drawing.fadeSeconds,
+      lineStyle: store.settings.drawing.lineStyle || 'solid',
+      compact: false,
       drawMode: false,
       markingsVisible: true,
       uiVisible: true
     });
+    compactMode = false;
     applyLoginItem();
     applyOverlaySettings();
     applyBoardSettings();
+    applyToolbarPreset();
     registerShortcuts();
     scheduleSave();
     broadcastState();
+    refreshTray();
     sendOverlayCommand({ type: 'sync-style' });
     sendBoardCommand({ type: 'sync-style' });
     return publicState();
@@ -1004,6 +1252,8 @@ function setupIpc() {
 }
 
 function applySettingsSideEffects(patch) {
+  if (patch.toolbar && (patch.toolbar.layout || patch.toolbar.size)) applyToolbarPreset();
+  if (patch.interface && patch.interface.displayMode) applyToolbarPreset();
   if (patch.overlay) {
     applyOverlaySettings();
     if (overlay) overlay.webContents.send('settings:applied', publicState());
@@ -1017,7 +1267,7 @@ function applySettingsSideEffects(patch) {
 }
 
 function setToolbarPanel(open, height) {
-  if (!toolbar || toolbar.isDestroyed()) return;
+  if (!toolbar || toolbar.isDestroyed() || compactMode) return;
   if (open) {
     if (!panelOpen) {
       const bounds = toolbar.getBounds();
@@ -1047,6 +1297,8 @@ function handleCommand(cmd) {
     case 'toggle-draw': setDrawMode(!store.ui.drawMode); return;
     case 'set-draw': setDrawMode(!!cmd.value); return;
     case 'toggle-ui': toggleUI(); return;
+    case 'compact': compactApp(); return;
+    case 'restore-compact': restoreApp(); return;
     case 'hide-ui': if (store.ui.uiVisible) toggleUI(); return;
     case 'toggle-board': toggleBoard(); return;
     case 'open-board': createBoard(); return;

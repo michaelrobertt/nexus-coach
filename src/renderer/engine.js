@@ -109,6 +109,8 @@ export class SceneEngine {
     this._raf = null;
     this._fadeTimer = null;
     this._images = new Map();
+    this._bgCache = document.createElement('canvas');
+    this._bgDirty = true;
     this._editing = null;
     this._saveTimer = null;
     this._bind();
@@ -166,6 +168,7 @@ export class SceneEngine {
     this.dpr = window.devicePixelRatio || 1;
     this.canvas.width = Math.round(this.w * this.dpr);
     this.canvas.height = Math.round(this.h * this.dpr);
+    this._bgDirty = true;
     this.render();
   }
 
@@ -216,7 +219,15 @@ export class SceneEngine {
     this.updateCursor();
     if (!v) {
       if (this.route) this.finishRoute(true);
-      this.active = null;
+      if (this.active) {
+        if (this.active.item && !this.active.changed) {
+          this.items = this.items.filter((it) => it.id !== this.active.item.id);
+        } else if (this.active.changed) {
+          this.commit();
+        }
+        this.active = null;
+      }
+      this.marquee = null;
       this.renderSoon();
     }
   }
@@ -246,6 +257,7 @@ export class SceneEngine {
       scale: isNum(view?.scale) ? clamp(view.scale, 0.12, 8) : this.view.scale
     };
     this._viewInitialized = true;
+    this._bgDirty = true;
     this.opts.onViewChange?.(this.view);
     this.renderSoon();
   }
@@ -261,6 +273,7 @@ export class SceneEngine {
       y: (this.h - this.mapH * scale) / 2
     };
     this._viewInitialized = true;
+    this._bgDirty = true;
     this.opts.onViewChange?.(this.view);
     this.renderSoon();
   }
@@ -276,6 +289,7 @@ export class SceneEngine {
       y: this.h / 2 - (rect.y + rect.h / 2) * scale
     };
     this._viewInitialized = true;
+    this._bgDirty = true;
     this.opts.onViewChange?.(this.view);
     this.renderSoon();
   }
@@ -283,6 +297,7 @@ export class SceneEngine {
   panBy(dx, dy) {
     this.view.x += dx;
     this.view.y += dy;
+    this._bgDirty = true;
     this.opts.onViewChange?.(this.view);
     this.renderSoon();
   }
@@ -294,6 +309,7 @@ export class SceneEngine {
     this.view.x = sx - (sx - this.view.x) * k;
     this.view.y = sy - (sy - this.view.y) * k;
     this.view.scale = next;
+    this._bgDirty = true;
     this.opts.onViewChange?.(this.view);
     this.renderSoon();
   }
@@ -317,6 +333,7 @@ export class SceneEngine {
   /* ----------------------------- background ---------------------------- */
 
   setBackground({ src, mode = 'hd', brightness = 1, grid = false, mapW, mapH } = {}) {
+    this._bgDirty = true;
     if (mapW) this.mapW = mapW;
     if (mapH) this.mapH = mapH;
     this.background.mode = mode;
@@ -326,6 +343,7 @@ export class SceneEngine {
       this.background.src = src;
       this._loadImage(src, (img) => {
         this.background.image = img;
+        this._bgDirty = true;
         if (this.zoomable && !this._viewInitialized) {
           this.fitView();
           this._viewInitialized = true;
@@ -373,6 +391,8 @@ export class SceneEngine {
   }
 
   commit(options = {}) {
+    clearTimeout(this._styleCommit);
+    this._styleCommit = null;
     const snap = this._snapshot();
     if (this.history[this.hIndex] !== snap) {
       this.history = this.history.slice(0, this.hIndex + 1);
@@ -387,6 +407,8 @@ export class SceneEngine {
 
   undo() {
     if (this._editing) this.cancelTextEdit();
+    clearTimeout(this._styleCommit);
+    this._styleCommit = null;
     if (this.hIndex <= 0) return false;
     this.hIndex--;
     this.items = JSON.parse(this.history[this.hIndex]);
@@ -399,6 +421,8 @@ export class SceneEngine {
   }
 
   redo() {
+    clearTimeout(this._styleCommit);
+    this._styleCommit = null;
     if (this.hIndex >= this.history.length - 1) return false;
     this.hIndex++;
     this.items = JSON.parse(this.history[this.hIndex]);
@@ -446,6 +470,11 @@ export class SceneEngine {
 
   loadScene(scene, opts = {}) {
     if (this._editing) this.cancelTextEdit();
+    clearTimeout(this._styleCommit);
+    this._styleCommit = null;
+    this.active = null;
+    this.route = null;
+    this.marquee = null;
     const data = scene?.scene && scene.scene.items ? scene.scene : scene;
     if (!data) return false;
     const items = Array.isArray(data.items) ? data.items : [];
@@ -461,12 +490,20 @@ export class SceneEngine {
 
   clear(options = {}) {
     if (this._editing) this.cancelTextEdit();
-    if (!this.items.length) return;
-    this.items = [];
-    this.selection.clear();
+    clearTimeout(this._styleCommit);
+    this._styleCommit = null;
+    const hadInteraction = !!(this.active || this.route || this.marquee || this.selection.size);
     this.active = null;
     this.route = null;
     this.marquee = null;
+    if (!this.items.length) {
+      this.selection.clear();
+      if (hadInteraction) this.emitSelection();
+      this.renderSoon();
+      return;
+    }
+    this.items = [];
+    this.selection.clear();
     this.emitSelection();
     this.commit();
   }
@@ -1431,7 +1468,8 @@ export class SceneEngine {
     if (!this.items.some((it) => it.ttl)) return false;
     const now = performance.now();
     const before = this.items.length;
-    this.items = this.items.filter((it) => !it.ttl || !it.bornAt || (now - it.bornAt) / 1000 < it.ttl);
+    const activeId = this.active?.item?.id;
+    this.items = this.items.filter((it) => it.id === activeId || !it.ttl || !it.bornAt || (now - it.bornAt) / 1000 < it.ttl);
     const changed = this.items.length !== before;
     if (changed) {
       for (const id of [...this.selection]) {
@@ -1451,6 +1489,30 @@ export class SceneEngine {
     return remaining < fadeDur ? remaining / fadeDur : 1;
   }
 
+  ensureBackgroundCache() {
+    const cache = this._bgCache;
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    if (cache.width !== width || cache.height !== height) {
+      cache.width = width;
+      cache.height = height;
+      this._bgDirty = true;
+    }
+    if (!this._bgDirty) return;
+    const ctx = cache.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.fillStyle = '#070b11';
+    ctx.fillRect(0, 0, this.w, this.h);
+    ctx.save();
+    ctx.translate(this.view.x, this.view.y);
+    ctx.scale(this.view.scale, this.view.scale);
+    this.renderBackground(ctx);
+    ctx.restore();
+    this._bgDirty = false;
+  }
+
   render() {
     const ctx = this.ctx;
     const dpr = this.dpr;
@@ -1458,15 +1520,15 @@ export class SceneEngine {
     ctx.clearRect(0, 0, this.w, this.h);
     if (!this.hidden) {
       this.pruneExpired();
-      const bg = this.background;
       if (this.mode === 'board') {
-        ctx.fillStyle = '#070b11';
-        ctx.fillRect(0, 0, this.w, this.h);
+        this.ensureBackgroundCache();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(this._bgCache, 0, 0);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
       ctx.save();
       ctx.translate(this.view.x, this.view.y);
       ctx.scale(this.view.scale, this.view.scale);
-      if (this.mode === 'board') this.renderBackground(ctx);
       const globalAlpha = clamp(this.style.globalOpacity ?? 1, 0.05, 1);
       for (const it of this.items) {
         const alpha = this.itemAlpha(it) * globalAlpha;

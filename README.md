@@ -91,6 +91,7 @@ Todos os atalhos são editáveis em **Configurações → Atalhos**. Atalhos glo
 - Mini-Quadro com mapa HD 2600 px, zoom, pan, fundo ajustável, grade, ondas (freeze/slow push/fast push), cenários prontos e salvamento automático.
 - Presets de coaching, paleta personalizável, favoritos reordenáveis e restauração de padrões.
 - Tema Hextech/Nocturne, quatro cores de destaque e configurações persistentes em `%APPDATA%\Nexus Coach\nexus-coach.json`.
+- Barra flutuante com layouts **horizontal/vertical**, tamanhos **pequeno/médio/grande**, modos **minimalista/especializado** e botão flutuante para minimizar/restaurar o aplicativo.
 
 ## Estrutura
 

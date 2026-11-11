@@ -1,7 +1,7 @@
 import { SceneEngine } from '../engine.js';
 import { icon } from '../icons.js';
 import {
-  applyTheme, assetUrl, debounce, escapeHtml, formatShortcut, hexToRgba, isTypingTarget,
+  applyTheme, assetUrl, debounce, escapeHtml, isTypingTarget,
   luminance, matchShortcut, setupRangeFill, toast, uid, STAMP_CATEGORIES, TOOL_ICONS, TOOL_LABELS
 } from '../ui.js';
 

@@ -1,6 +1,6 @@
 import { icon } from '../icons.js';
 import {
-  applyTheme, debounce, escapeHtml, formatShortcut, isTypingTarget, setupRangeFill,
+  applyTheme, escapeHtml, formatShortcut, isTypingTarget, setupRangeFill,
   shortcutFromEvent, toast, TOOL_ICONS, TOOL_LABELS, TOOL_SHORTCUT_LABELS
 } from '../ui.js';
 
@@ -35,6 +35,7 @@ const GLOBAL_SHORTCUTS = [
 
 const NAV = [
   { id: 'geral', label: 'Geral', icon: 'settings' },
+  { id: 'interface', label: 'Interface', icon: 'sliders' },
   { id: 'overlay', label: 'Overlay', icon: 'monitor' },
   { id: 'ferramentas', label: 'Ferramentas', icon: 'palette' },
   { id: 'atalhos', label: 'Atalhos', icon: 'keyboard' },
@@ -52,7 +53,6 @@ let active = 'geral';
 let lolVersion = '';
 let capturing = null;
 let captureTimer = null;
-const debouncedPatches = new Map();
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                            */
@@ -84,25 +84,6 @@ function patchFor(path, value) {
   o[parts[parts.length - 1]] = value;
   return { settings: root };
 }
-
-function updateSetting(path, value, opts = {}) {
-  setPath(settings, path, value);
-  if (path === 'theme' || path === 'accent') applyTheme(settings);
-  const patch = patchFor(path, value);
-  const send = debouncedPatches.get(path) || debounce((p) => window.nexus.patchState(p).catch(() => {}), opts.debounce || 40);
-  debouncedPatches.set(path, send);
-  send(patch);
-  if (opts.rerender) renderSection();
-  if (opts.toast) toast(opts.toast, 'info');
-}
-
-async function flushSetting(path, value) {
-  const fn = debouncedPatches.get(path);
-  if (fn) { /* debounce já agendado */ }
-  await window.nexus.patchState(patchFor(path, value));
-}
-
-function usd(v) { return Number(v).toLocaleString('pt-BR'); }
 
 /* ------------------------------------------------------------------ */
 /* UI builders                                                        */
@@ -151,6 +132,7 @@ function renderSection() {
   const content = $('#content');
   const builders = {
     geral: geralHTML,
+    interface: interfaceHTML,
     overlay: overlayHTML,
     ferramentas: ferramentasHTML,
     atalhos: atalhosHTML,
@@ -212,6 +194,59 @@ function geralHTML() {
       <div class="setting-row">
         <div class="sr-info"><span class="sr-label">Iniciar em modo desenho</span><span class="sr-desc">O overlay começa capturando o mouse em vez de interagir com o sistema.</span></div>
         ${switchEl('overlay.startInDrawMode', !!settings.overlay.startInDrawMode)}
+      </div>
+    `);
+}
+
+function interfaceHTML() {
+  const tb = settings.toolbar || {};
+  const layout = tb.layout || 'horizontal';
+  const size = tb.size || 'medium';
+  const mode = settings.interface?.displayMode || 'specialist';
+  const layoutCard = (id, label, desc) => `
+    <button class="layout-card ${layout === id ? 'active' : ''}" data-layout-choice="${id}">
+      <span class="layout-preview ${id}">
+        <span class="lp-shell">
+          <span class="lp-bar"></span>
+          <span class="lp-row"><i></i><i></i><i></i><i></i></span>
+          <span class="lp-row"><i></i><i></i><i></i></span>
+        </span>
+      </span>
+      <span class="layout-copy"><b>${label}</b><small>${desc}</small></span>
+      ${layout === id ? `<span class="choice-check">${icon('check', 11)}</span>` : ''}
+    </button>`;
+  const sizeCard = (id, label, desc) => `
+    <button class="size-card ${size === id ? 'active' : ''}" data-size-choice="${id}">
+      <span class="size-preview ${id}"><span></span></span>
+      <b>${label}</b>
+      <small>${desc}</small>
+      ${size === id ? `<span class="choice-check">${icon('check', 11)}</span>` : ''}
+    </button>`;
+  const modeCard = (id, label, desc, ico) => `
+    <button class="display-mode-card ${mode === id ? 'active' : ''}" data-display-mode="${id}">
+      <span class="dm-icon">${icon(ico, 18)}</span>
+      <span class="dm-copy"><b>${label}</b><small>${desc}</small></span>
+      ${mode === id ? `<span class="choice-check">${icon('check', 11)}</span>` : ''}
+    </button>`;
+  return pageHead('Interface', 'Escolha como a barra flutuante aparece. As alterações são aplicadas imediatamente, sem reiniciar o aplicativo.') +
+    card('Layout da barra', 'Horizontal ocupa menos altura; vertical concentra as ferramentas em uma coluna para laterais da tela.', 'sliders', `
+      <div class="layout-options">
+        ${layoutCard('horizontal', 'Horizontal', 'Barra larga, ideal para o topo da tela.')}
+        ${layoutCard('vertical', 'Vertical', 'Barra compacta em coluna, ideal para as laterais.')}
+      </div>
+    `) +
+    card('Tamanho da interface', 'Reduza a presença na tela mantendo todos os recursos acessíveis.', 'monitor', `
+      <div class="size-options">
+        ${sizeCard('small', 'Pequeno', 'Compacto e discreto')}
+        ${sizeCard('medium', 'Médio', 'Equilíbrio padrão')}
+        ${sizeCard('large', 'Grande', 'Mais conforto visual')}
+      </div>
+      <div class="note">${icon('info', 13)}<span>O tamanho altera a barra flutuante; o Mini-Quadro e as Configurações continuam com o tamanho próprio. Você ainda pode ajustar a barra manualmente pelas bordas.</span></div>
+    `) +
+    card('Modo de exibição', 'A troca é imediata e não reinicia o overlay.', 'eye', `
+      <div class="display-mode-options">
+        ${modeCard('minimal', 'Minimalista', 'Só o essencial: ferramentas principais, cores, espessura e ações de desenho.', 'eye')}
+        ${modeCard('specialist', 'Especializado', 'Todos os controles: favoritos, opacidade, estilos, presets, tintas e exportação.', 'sparkles')}
       </div>
     `);
 }
@@ -782,6 +817,33 @@ function bindEvents() {
     const nav = e.target.closest('[data-nav]');
     if (nav) { active = nav.dataset.nav; renderSection(); return; }
 
+    const layoutChoice = e.target.closest('[data-layout-choice]');
+    if (layoutChoice) {
+      const value = layoutChoice.dataset.layoutChoice;
+      settings.toolbar.layout = value;
+      await window.nexus.patchState({ settings: { toolbar: { layout: value } } });
+      renderSection();
+      toast(value === 'vertical' ? 'Layout vertical aplicado' : 'Layout horizontal aplicado', 'success');
+      return;
+    }
+    const sizeChoice = e.target.closest('[data-size-choice]');
+    if (sizeChoice) {
+      const value = sizeChoice.dataset.sizeChoice;
+      settings.toolbar.size = value;
+      await window.nexus.patchState({ settings: { toolbar: { size: value } } });
+      renderSection();
+      toast('Tamanho da interface atualizado', 'success');
+      return;
+    }
+    const displayMode = e.target.closest('[data-display-mode]');
+    if (displayMode) {
+      const value = displayMode.dataset.displayMode;
+      settings.interface = { ...(settings.interface || {}), displayMode: value };
+      await window.nexus.patchState({ settings: { interface: { displayMode: value } } });
+      renderSection();
+      toast(value === 'minimal' ? 'Modo minimalista ativo' : 'Modo especializado ativo', 'success');
+      return;
+    }
     const theme = e.target.closest('[data-theme-choice]');
     if (theme) {
       settings.theme = theme.dataset.themeChoice;

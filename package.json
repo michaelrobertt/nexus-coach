@@ -10,11 +10,13 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "dist:win": "electron-builder --win nsis portable",
-    "dist:dir": "electron-builder --dir"
+    "dist:dir": "electron-builder --dir",
+    "test": "node --test tests/e2e.test.js"
   },
   "devDependencies": {
     "electron": "45.3.0",
-    "electron-builder": "26.18.0"
+    "electron-builder": "26.18.0",
+    "playwright-core": "^1.65.0"
   },
   "build": {
     "appId": "com.nexuscoach.app",

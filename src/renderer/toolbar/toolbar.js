@@ -1,6 +1,6 @@
 import { icon } from '../icons.js';
 import {
-  applyTheme, assetUrl, debounce, escapeHtml, formatShortcut, hexToRgba, isTypingTarget,
+  applyTheme, assetUrl, debounce, escapeHtml, isTypingTarget,
   luminance, matchShortcut, setupRangeFill, toast, STAMP_CATEGORIES, TOOL_ICONS, TOOL_LABELS
 } from '../ui.js';
 
@@ -13,21 +13,29 @@ let ui = null;
 let catalog = null;
 let champions = [];
 let currentPanel = null;
+let panelEpoch = 0;
 let activeCat = 'champions';
 let lastColorsSig = '';
 let lastPresetsSig = '';
 let widthFill = null;
 let opacityFill = null;
 
-const PANEL_HEIGHTS = {
-  stamps: 610,
-  aoe: 548,
-  presets: 576,
-  colors: 468,
-  fade: 452,
-  shapes: 426,
-  arrows: 512
+const PANEL_ADD = {
+  stamps: 430,
+  aoe: 390,
+  presets: 410,
+  colors: 300,
+  fade: 285,
+  shapes: 270,
+  arrows: 350
 };
+
+let collapsedHeight = 158;
+let orbDrag = null;
+
+function panelTargetHeight(name) {
+  return Math.max(320, collapsedHeight + (PANEL_ADD[name] || 350));
+}
 
 const PANEL_TITLES = {
   stamps: 'Biblioteca de elementos',
@@ -88,7 +96,9 @@ function setStaticIcons() {
   $('#brandLogo').innerHTML = icon('logo', 27);
   $('#boardBtn').innerHTML = icon('board', 17);
   $('#settingsBtn').innerHTML = icon('settings', 17);
-  $('#hideBtn').innerHTML = icon('hide', 17);
+  $('#compactBtn').innerHTML = icon('hide', 17);
+  $('#hideBtn').innerHTML = icon('close', 17);
+  $('#orbIcon').innerHTML = icon('hide', 22);
   $('#undoBtn').innerHTML = icon('undo', 17);
   $('#redoBtn').innerHTML = icon('redo', 17);
   $('#clearBtn').innerHTML = icon('trash', 16);
@@ -216,6 +226,15 @@ function applyState(next) {
   settings = next.settings;
   ui = next.ui;
   applyTheme(settings);
+  const toolbar = settings.toolbar || {};
+  document.body.classList.toggle('layout-vertical', toolbar.layout === 'vertical');
+  document.body.classList.toggle('layout-horizontal', toolbar.layout !== 'vertical');
+  document.body.classList.toggle('size-small', toolbar.size === 'small');
+  document.body.classList.toggle('size-medium', !toolbar.size || toolbar.size === 'medium');
+  document.body.classList.toggle('size-large', toolbar.size === 'large');
+  document.body.classList.toggle('mode-minimal', settings.interface?.displayMode === 'minimal');
+  document.body.classList.toggle('compact', !!ui.compact);
+  if (!currentPanel && !ui.compact) collapsedHeight = window.innerHeight;
   document.documentElement.style.setProperty('--tool-scale', String(settings.toolbar?.scale || 1));
   renderHeaderState();
   renderPalette();
@@ -226,11 +245,22 @@ function applyState(next) {
   updatePanelButtonStates();
   updateTeamToggle();
 
+  if (ui.compact) {
+    if (currentPanel) {
+      currentPanel = null;
+      hidePanelDom();
+    }
+    orbDrag = null;
+    return;
+  }
+
   const panelFromState = ui.panel || null;
   if (panelFromState !== currentPanel && panelFromState !== previousPanel) {
+    panelEpoch++;
     currentPanel = panelFromState;
     syncPanelWindow();
   } else if (currentPanel && panelFromState === null) {
+    panelEpoch++;
     currentPanel = null;
     hidePanelDom();
     window.nexus.setToolbarPanel(false, 0);
@@ -264,9 +294,10 @@ function updateTeamToggle() {
 }
 
 function syncPanelWindow() {
+  if (ui?.compact) return;
   if (currentPanel) {
     renderPanel();
-    window.nexus.setToolbarPanel(true, PANEL_HEIGHTS[currentPanel] || 500);
+    window.nexus.setToolbarPanel(true, panelTargetHeight(currentPanel));
   } else {
     hidePanelDom();
     window.nexus.setToolbarPanel(false, 0);
@@ -282,10 +313,12 @@ async function openPanel(name) {
     await closePanel();
     return;
   }
+  const epoch = ++panelEpoch;
   currentPanel = name;
   renderPanel();
   await patchUI({ panel: name });
-  window.nexus.setToolbarPanel(true, PANEL_HEIGHTS[name] || 500);
+  if (epoch !== panelEpoch || currentPanel !== name) return;
+  window.nexus.setToolbarPanel(true, panelTargetHeight(name));
   $('#panel')?.classList.remove('hidden');
   if (name === 'stamps') {
     requestAnimationFrame(() => $('#stampSearch')?.focus());
@@ -294,8 +327,10 @@ async function openPanel(name) {
 
 async function closePanel(focus = true) {
   if (!currentPanel) return;
+  const epoch = ++panelEpoch;
   currentPanel = null;
   await patchUI({ panel: null });
+  if (epoch !== panelEpoch) return;
   window.nexus.setToolbarPanel(false, 0);
   $('#panel')?.classList.add('hidden');
   if (focus && ui?.drawMode) window.nexus.focusOverlay();
@@ -581,23 +616,28 @@ async function chooseTool(tool, opts = {}) {
   }
   const patch = { tool, drawMode: true, panel: null };
   if (tool === 'stamp' && !ui.stampId) {
+    const epoch = ++panelEpoch;
     currentPanel = 'stamps';
     patch.panel = 'stamps';
     await patchUI(patch);
+    if (epoch !== panelEpoch || currentPanel !== 'stamps') return;
     renderPanel();
-    window.nexus.setToolbarPanel(true, PANEL_HEIGHTS.stamps);
+    window.nexus.setToolbarPanel(true, panelTargetHeight('stamps'));
     requestAnimationFrame(() => $('#stampSearch')?.focus());
     return;
   }
   if (tool === 'aoe') {
+    const epoch = ++panelEpoch;
     currentPanel = 'aoe';
     patch.panel = 'aoe';
     await patchUI(patch);
+    if (epoch !== panelEpoch || currentPanel !== 'aoe') return;
     renderPanel();
-    window.nexus.setToolbarPanel(true, PANEL_HEIGHTS.aoe);
+    window.nexus.setToolbarPanel(true, panelTargetHeight('aoe'));
     return;
   }
   currentPanel = null;
+  panelEpoch++;
   hidePanelDom();
   await patchUI(patch);
   window.nexus.setToolbarPanel(false, 0);
@@ -606,6 +646,7 @@ async function chooseTool(tool, opts = {}) {
 
 async function applyStyleAndClose(stylePatch, message) {
   currentPanel = null;
+  panelEpoch++;
   hidePanelDom();
   await patchUI({ ...stylePatch, panel: null, drawMode: true });
   window.nexus.setToolbarPanel(false, 0);
@@ -898,9 +939,53 @@ function bindEvents() {
     await patchUI({ drawMode: false, panel: null });
     window.nexus.command({ type: 'open-settings' });
   });
+  $('#compactBtn').addEventListener('click', async () => {
+    await closePanel(false);
+    window.nexus.compactApp();
+  });
   $('#hideBtn').addEventListener('click', async () => {
     await closePanel(false);
     window.nexus.command({ type: 'hide-ui' });
+  });
+
+  const orb = $('#compactOrb');
+  orb.addEventListener('pointerdown', (e) => {
+    if (!ui?.compact) return;
+    e.preventDefault();
+    orbDrag = {
+      startX: e.screenX,
+      startY: e.screenY,
+      winX: window.screenX,
+      winY: window.screenY,
+      moved: false
+    };
+    orb.classList.add('dragging');
+    try { orb.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  });
+  orb.addEventListener('pointermove', (e) => {
+    if (!orbDrag) return;
+    const dx = e.screenX - orbDrag.startX;
+    const dy = e.screenY - orbDrag.startY;
+    if (Math.abs(dx) + Math.abs(dy) > 4) orbDrag.moved = true;
+    window.nexus.moveCompact(orbDrag.winX + dx, orbDrag.winY + dy).catch(() => {});
+  });
+  const endOrbDrag = async (e, restore) => {
+    if (!orbDrag) return;
+    const moved = orbDrag.moved;
+    orbDrag = null;
+    orb.classList.remove('dragging');
+    try { orb.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    if (restore && !moved) await window.nexus.restoreCompact();
+  };
+  orb.addEventListener('pointerup', (e) => endOrbDrag(e, true));
+  orb.addEventListener('pointercancel', (e) => endOrbDrag(e, false));
+  orb.addEventListener('click', (e) => e.preventDefault());
+  orb.addEventListener('dblclick', () => window.nexus.restoreCompact());
+  orb.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      window.nexus.restoreCompact();
+    }
   });
   $('#undoBtn').addEventListener('click', () => window.nexus.command({ type: 'undo' }));
   $('#redoBtn').addEventListener('click', () => window.nexus.command({ type: 'redo' }));
@@ -962,15 +1047,16 @@ function bindEvents() {
 
   document.addEventListener('keydown', onKeyDown);
   window.addEventListener('resize', () => {
-    if (currentPanel) {
-      // Mantém o painel encaixado quando o usuário redimensiona a janela.
-      window.nexus.setToolbarPanel(true, PANEL_HEIGHTS[currentPanel] || 500);
+    if (currentPanel && !ui?.compact) {
+      window.nexus.setToolbarPanel(true, panelTargetHeight(currentPanel));
+    } else if (!currentPanel && !ui?.compact) {
+      collapsedHeight = window.innerHeight;
     }
   });
 }
 
 async function onKeyDown(e) {
-  if (isTypingTarget()) return;
+  if (isTypingTarget() || ui?.compact) return;
   if (e.key === 'Escape') {
     if (currentPanel) { e.preventDefault(); await closePanel(); }
     else if (ui?.tool && ui.tool !== 'select') { e.preventDefault(); await patchUI({ tool: 'select' }); }
