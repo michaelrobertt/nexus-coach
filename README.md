@@ -4,6 +4,16 @@ Overlay de coaching tático para **League of Legends**, inspirado na praticidade
 
 O programa é uma camada transparente sobre a tela, com barra flutuante, desenho sobre o jogo, Click-Through, tinta temporária, biblioteca de campeões/elementos e um **Mini-Quadro Tático** independente com Summoner's Rift em alta resolução.
 
+## Idealização
+
+O Nexus Coach foi idealizado por **Nappy**, criador do canal [@nappybr no YouTube](https://www.youtube.com/@nappybr). Jogador assíduo de League of Legends, Nappy procurava uma ferramenta prática que o ajudasse em suas aulas e na explicação visual de estratégias — algo simples como o Epic Pen, mas pensado especificamente para o universo de LoL.
+
+Foi dessa necessidade que nasceu o Nexus Coach: reunir desenho em tempo real, ferramentas táticas, biblioteca de elementos e um mini-quadro de Summoner's Rift em um único programa feito para coaches e professores do jogo.
+
+- **Criador:** Nappy
+- **YouTube:** [youtube.com/@nappybr](https://www.youtube.com/@nappybr)
+- **Jogo:** League of Legends
+
 ## Requisitos
 
 - Windows 10 ou 11
