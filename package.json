@@ -1,7 +1,7 @@
 {
   "name": "nexus-coach",
   "productName": "Nexus Coach",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Overlay de coaching tático para League of Legends",
   "main": "main.js",
   "author": "Nexus Coach",
