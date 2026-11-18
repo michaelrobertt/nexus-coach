@@ -2,7 +2,7 @@
   "name": "nexus-coach",
   "productName": "Nexus Coach",
   "version": "1.0.1",
-  "description": "Overlay de coaching tático para League of Legends",
+  "description": "Overlay de coaching tático para League of Legends com desenho sobre o jogo, biblioteca de elementos e Mini-Quadro de Summoner's Rift.",
   "main": "main.js",
   "author": "Nexus Coach",
   "license": "MIT",
@@ -60,5 +60,13 @@
     "portable": {
       "artifactName": "NexusCoach-Portable-${version}.${ext}"
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelrobertt/nexus-coach.git"
+  },
+  "bugs": {
+    "url": "https://github.com/michaelrobertt/nexus-coach/issues"
+  },
+  "homepage": "https://github.com/michaelrobertt/nexus-coach#readme"
 }
